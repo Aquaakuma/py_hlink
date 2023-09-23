@@ -3,6 +3,7 @@ from pathlib import Path
 import configparser
 import os
 import argparse
+import subprocess
 
 def files_filter(mode='suffix', file_path=None, file_extensions=None):
     if mode == 'all':
@@ -11,7 +12,6 @@ def files_filter(mode='suffix', file_path=None, file_extensions=None):
         if Path(file_path).suffix in file_extensions:
             return True
         else:
-            print(f"忽略文件 {Path(file_path)}")
             return False
     else:
         return True
@@ -45,8 +45,27 @@ def rebuild_data(target_directory):
     hlink_sql = MediaLibrarySQLite(table_name, data_list)
     hlink_sql.rebuild_data()
     hlink_sql.print_pretty_table_from_db()
-    # hlink_sql.close_database()
 
+def create_hardlink(source_file, target_file):
+    system = os.name
+    if system == 'nt':
+        Path(target_file).hardlink_to(source_file)
+        return
+    elif system == 'posix':
+        unix = os.uname().sysname
+        if unix == 'Linux':
+            Path(target_file).hardlink_to(source_file)
+            return
+        elif unix in ['FreeBSD', 'Darwin']:
+            try:
+                subprocess.run(['cp', '-l', source_file, target_file], check=True)
+            except subprocess.CalledProcessError as e:
+                print(f'创建硬链接失败：{str(e)}')
+                raise
+            return
+    else:
+        print("未知系统")
+        return
 
 def files_hlinker(source_directory, target_directory, file_extensions):
     table_name = Path(target_directory).name
@@ -60,8 +79,8 @@ def files_hlinker(source_directory, target_directory, file_extensions):
     for item in hlink_list:
         try:
             Path(item[2]).parent.mkdir(parents=True, exist_ok=True)
-            Path(item[2]).hardlink_to(item[1])
-            print(f'已从 {item[1]} 创建了硬链接到 {item[0]}')
+            create_hardlink(item[1], item[2])
+            print(f'已从 {item[1]} 创建了硬链接到 {item[2]}')
             insert_list.append(item)
         except OSError as e:
             print(f'创建硬链接失败：{str(e)}')
@@ -101,7 +120,7 @@ def porcess_hlink(source=None, target=None, rebuild=False):
         for section_name in config.sections():
             target_directory = config.get(section_name, 'target_directory')
             rebuild_data(target_directory)
-            return
+        return
         
     elif source is None and target is None:
         for section_name in config.sections():
@@ -148,15 +167,6 @@ def main():
         # 没有提供参数时，默认执行原来的操作
         # 遍历所有分节并执行链接媒体文件的操作
         porcess_hlink()
-
-
-
-    
-
-
-
-    
-
 
 
 
