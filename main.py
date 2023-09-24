@@ -5,7 +5,7 @@ import os
 import argparse
 import subprocess
 
-def files_filter(mode='suffix', file_path=None, file_extensions=None):
+def files_filter(mode='suffix', file_path='', file_extensions=''):
     if mode == 'all':
         return True
     elif mode == 'suffix':
@@ -16,10 +16,9 @@ def files_filter(mode='suffix', file_path=None, file_extensions=None):
     else:
         return True
 
-def create_date(source_directory=None, target_directory=None, file_extensions=None, filter_mode='suffix'):
+def create_date(source_directory='', target_directory='', file_extensions=[], filter_mode='suffix'):
     data_list = []
-
-    if source_directory is None and target_directory:
+    if source_directory == ''  and target_directory:
         for file_path in Path(target_directory).glob('**/*'):
             if file_path.is_file() and files_filter('all'):
                 data_list.append([os.stat(file_path).st_ino, None, str(file_path), file_path.suffix])
@@ -27,7 +26,7 @@ def create_date(source_directory=None, target_directory=None, file_extensions=No
 
     for file_path in Path(source_directory).glob('**/*'):
         
-        if file_path.is_file() and files_filter(filter_mode, file_path, file_extensions):
+        if file_path.is_file() and files_filter(filter_mode, str(file_path), file_extensions):
             source_file = file_path
             target_file = Path(target_directory / file_path.relative_to(source_directory))
             # 获取源文件的 inode 信息
@@ -52,7 +51,7 @@ def create_hardlink(source_file, target_file):
         Path(target_file).hardlink_to(source_file)
         return
     elif system == 'posix':
-        unix = os.uname().sysname
+        unix = os.uname().sysname # type: ignore
         if unix == 'Linux':
             Path(target_file).hardlink_to(source_file)
             return
@@ -113,7 +112,7 @@ def is_subdirectory(child_directory, parent_directory):
 
 
 
-def porcess_hlink(source=None, target=None, rebuild=False):
+def porcess_hlink(source='', target='', rebuild=False):
     config_file = 'config.ini'
     config = load_config(config_file)
     if rebuild is True:
@@ -122,7 +121,7 @@ def porcess_hlink(source=None, target=None, rebuild=False):
             rebuild_data(target_directory)
         return
         
-    elif source is None and target is None:
+    elif source == '' and target == '':
         for section_name in config.sections():
             source_directory = config.get(section_name, 'source_directory')
             target_directory = config.get(section_name, 'target_directory') 

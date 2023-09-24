@@ -22,7 +22,7 @@ class MediaLibrarySQLite:
         self.conn.close()
 
     def create_table_if_not_exists(self):
-        logging.DEBUG(f"创建表格 {self.table_name}")
+        logging.debug(f"创建表格 {self.table_name}")
         query = f'''CREATE TABLE IF NOT EXISTS {self.table_name} (inode INTEGER PRIMARY KEY, file_path TEXT, target_path TEXT, file_type TEXT, last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'''
         self.cursor.execute(query)
         self.conn.commit()
@@ -100,14 +100,14 @@ class MediaLibrarySQLite:
         self.print_pretty_table_from_db()
     
     def get_data(self):
-        logging.DEBUG(f"获取 {self.table_name} 所有内容")
+        logging.debug(f"获取 {self.table_name} 所有内容")
         query = f"SELECT * FROM {self.table_name}"
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
 
     def print_pretty_table_from_db(self):
-        logging.DEBUG(f"打印表格 {self.table_name}")
+        logging.debug(f"打印表格 {self.table_name}")
         rows = self.get_data()
         column_names = [description[0]
                         for description in self.cursor.description]
