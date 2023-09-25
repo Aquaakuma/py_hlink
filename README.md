@@ -4,6 +4,7 @@
 ## 要求
 - Python 3.x
 - SQLite
+
 ## 安装
 从 GitHub 克隆或下载该存储库。
 使用以下命令安装所需的依赖项：pip install -r requirements.txt。
@@ -26,17 +27,24 @@ file_extensions = .jpg .png
 使用方法
 要使用脚本，请使用以下命令运行 main.py 文件：
 ``````
-python main.py [-rebuild] [-source SOURCE] [-target TARGET]
--rebuild：重新构建目标目录中的数据。这将使用最新的文件信息更新数据库。
+python main.py [-rebuild] [-build_cache] [-source SOURCE] [-target TARGET]
+-rebuild：重新构建数据库，将根据目标目录匹配的所有文件更新数据库。
+-build_cache：缓存所有源目录和目标目录匹配的文件，在修剪好目标目录之后运行可以在下次运行脚本的时候忽略已删除的硬链接。
 -source SOURCE：指定要从中创建硬链接的源目录。
 -target TARGET：指定要创建硬链接的目标目录。
 如果没有提供参数，脚本将使用 config.ini 文件中的配置为所有源目录和目标目录对创建硬链接。
 ``````
+
 ## 示例
-在目标目录中重新构建数据：
+配置config.ini之后运行`main.py`创建媒体库文件硬链接
+``````
+python main.py
 
 ``````
-python main.py -rebuild
+在目标目录中构建/缓存数据：
+
+``````
+python main.py -rebuild/build_cache
 ``````
 从特定的源目录到特定的目标目录创建硬链接：
 

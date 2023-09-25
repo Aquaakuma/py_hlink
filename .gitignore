@@ -162,4 +162,3 @@ cython_debug/
 1/
 a/
 *.db
-test_*

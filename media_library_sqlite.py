@@ -1,7 +1,7 @@
 import sqlite3
 import logging
 from texttable import Texttable
-logging.basicConfig(level=logging.INFO)
+
 
 class MediaLibrarySQLite:
     def __init__(self, table_name, data):
@@ -40,9 +40,11 @@ class MediaLibrarySQLite:
     def data_purge(self):
         raw_data = self.data
         ripe_data = []
+        replicate = False
         for item in raw_data:
             if len(item) != 4:
                 raise ValueError("daata中的元素不是含有 4 个元素的列表")
+            
             found_duplicate = False
             for index, ripe_item in enumerate(ripe_data):
                 if ripe_item[0] == item[0]:
@@ -52,18 +54,28 @@ class MediaLibrarySQLite:
                     found_duplicate = True
                     break
             if not found_duplicate:
+                replicate = True
                 ripe_data.append(item)
-                logging.debug("列表中存在重复的内容，已进行合并")
+        if replicate:
+            logging.debug("列表中存在重复的内容，已进行合并")
         self.data = ripe_data
         return
+    
+    def which_item_exists(self):
+        logging.info(f"查询 inode 是否存在于表格 {self.table_name} 中")
+        inodes = [lst[0] for lst in self.data]
+        placeholders = ', '.join(['?'] * len(inodes))
+        query = f"SELECT inode FROM {self.table_name} WHERE inode IN ({placeholders})"
+        self.cursor.execute(query, inodes)
+        rows = self.cursor.fetchall()
+        existing_inodes = set(row[0] for row in rows)
+        return existing_inodes
 
     def insert_data(self):
         logging.info(f"插入数据到表格 {self.table_name}")
         insert_values = []
         update_values = []
-        select_query = f'SELECT inode FROM {self.table_name} WHERE inode IN ({",".join(["?"] * len(self.data))})'
-        self.cursor.execute(select_query, [lst[0] for lst in self.data])
-        existing_inodes = set(row[0] for row in self.cursor.fetchall())
+        existing_inodes = self.which_item_exists()
 
         for lst in self.data:
             if lst[0] in existing_inodes:
@@ -88,26 +100,21 @@ class MediaLibrarySQLite:
         self.conn.commit()
 
     def rebuild_data(self):
-        logging.info(f"删除表格 {self.table_name}")
-        self.cursor.execute(f'DROP TABLE IF EXISTS {self.table_name}')
-        logging.info(f"重新创建表格 {self.table_name}")
-        self.create_table_if_not_exists()
-        logging.debug(self.table_name)
-        logging.debug(self.data)
+        logging.info(f"清空表格 {self.table_name}")
+        self.cursor.execute(f'DELETE FROM {self.table_name}')
         logging.info("重新写入数据")
         self.insert_data()
         self.conn.commit()
-        self.print_pretty_table_from_db()
     
     def get_data(self):
-        logging.debug(f"获取 {self.table_name} 所有内容")
+        logging.info(f"获取 {self.table_name} 所有内容")
         query = f"SELECT * FROM {self.table_name}"
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
 
     def print_pretty_table_from_db(self):
-        logging.debug(f"打印表格 {self.table_name}")
+        logging.info(f"打印表格 {self.table_name}")
         rows = self.get_data()
         column_names = [description[0]
                         for description in self.cursor.description]
@@ -119,4 +126,4 @@ class MediaLibrarySQLite:
 
         table.set_cols_width([5, 20, 20, 5, 10])
 
-        logging.debug(table.draw())
+        logging.info(f"\n{table.draw()}")
