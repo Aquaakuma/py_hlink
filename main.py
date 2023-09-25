@@ -132,7 +132,12 @@ class MediaLibraryLinker(MediaLibraryBuilder):
 
 
     def build_cache(self):
-        super().rebuild_data()
+        table_name = Path(self.target_dir).name
+        data_list = self.create_data()
+        data_list  += super().create_data()
+        hlink_sql = MediaLibrarySQLite(table_name, data_list)
+        hlink_sql.rebuild_data()
+        hlink_sql.print_pretty_table_from_db()
 
 
 def is_subdirectory(child_directory, parent_directory):

@@ -124,6 +124,5 @@ class MediaLibrarySQLite:
         for row in rows:
             table.add_row(row)
 
-        table.set_cols_width([5, 20, 20, 5, 10])
 
         logging.info(f"\n{table.draw()}")
